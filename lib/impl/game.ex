@@ -40,26 +40,29 @@ defmodule Hangman.Impl.Game do
   end
 
   defp accept_guess( game, _guess, true = _already_used) do
-    game
-    |> Map.put(:game_state, :already_used)
+    %{ game | game_state: :already_used }
   end
 
-  defp accept_guess( game, guess, false = _already_used) do
-    game
-    |> score_guess(guess, guess in game.letters)
+  defp accept_guess( game, guess, _already_used) do
+    %{game | used: MapSet.put(game.used, guess)}
+    |> score_guess(Enum.member?(game.letters, guess))
   end
 
-  defp score_guess(game , guess, true = _in_letters) when game.turns_left == 1 do
-    %{ game | game_status: bool_to_won_status(won), turns_left: 0, game_state: :won,
+  defp score_guess( game, true = _good_guess) do
+    new_state = maybe_won(MapSet.subset?(MapSet.new(game.letters), game.used))
+    %{game | game_state: new_state }
   end
 
-  defp score_guess( game, guess, true = _in_letters)  do
-    %{ game | used: MapSet.put(game.used, guess), turns_left: game.turns_left - 1, game_state: :good_move}
+  defp score_guess(game = %{ turns_left: 1 }, _) do
+    %{ game | game_state: :lost, turns_left: 0}
   end
 
-  defp score_guess( game, guess, false = _in_letters)  do
-    %{ game | used: MapSet.put(game.used, guess), turns_left: game.turns_left - 1, game_state: :bad_move}
+  defp score_guess(game, _) do
+    %{ game | game_state: :bad_guess, turns_left: game.turns_left - 1 }
   end
+
+  defp maybe_won( true = _has_won), do: :won
+  defp maybe_won(_), do: :good_guess
 
   defp to_game_tally_tuple(game) do
     {game, tally(game)}
@@ -69,8 +72,17 @@ defmodule Hangman.Impl.Game do
     %{
       turns_left: game.turns_left,
       game_state: game.game_state,
-      letters: [],
+      letters: reveal_guessed_letters(game),
       used: game.used |> MapSet.to_list |> Enum.sort
     }
   end
+
+  defp reveal_guessed_letters(game) do
+    game.letters
+    |> Enum.map(fn letter -> MapSet.member?(game.used, letter) |> maybe_reveal(letter) end)
+  end
+
+  defp maybe_reveal(true, letter), do: letter
+  defp maybe_reveal(_,_), do: "_"
+
 end
