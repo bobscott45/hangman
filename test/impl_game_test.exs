@@ -21,7 +21,7 @@ defmodule HangmanImplGameTest do
     for state <- [:won, :lost] do
       test_game = Game.new_game("wombat")
       |> Map.put(:game_state, state)
-      { game, _tally } = Game.make_move(test_game, "")
+      { game, _tally } = Game.make_move(test_game, "a")
       assert game == test_game
     end
   end

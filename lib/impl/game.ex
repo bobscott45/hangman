@@ -2,6 +2,11 @@ defmodule Hangman.Impl.Game do
 
   alias  Hangman.Type
 
+  @valid_moves ?a .. ?z
+               |> Enum.to_list
+               |> List.to_string
+               |> String.codepoints
+
   @type t :: %__MODULE__{
     turns_left: integer,
     game_state: Type.state,
@@ -29,15 +34,29 @@ defmodule Hangman.Impl.Game do
   end
 
   @spec make_move(t, String.t) :: { t, Type.tally }
+
+  def make_move(game, guess) when guess not in @valid_moves do
+    %{game | game_state: :invalid_guess}
+  end
+
   def make_move(game = %{game_state: state}, _) when state in [:won, :lost ] do
     game
     |> to_game_tally_tuple
   end
 
+
   def make_move( game, guess)  do
     accept_guess( game, guess, MapSet.member?(game.used, guess))
     |> to_game_tally_tuple
   end
+
+  defp is_lowercase({:ok, guess}) do
+    case String.downcase(guess) == guess do
+      true -> { :ok, guess }
+      _ -> { :error, guess }
+    end
+  end
+  defp is_lowercase({_, guess}), do: { :error, guess}
 
   defp accept_guess( game, _guess, true = _already_used) do
     %{ game | game_state: :already_used }
