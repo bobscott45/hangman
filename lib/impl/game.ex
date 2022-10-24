@@ -28,7 +28,7 @@ defmodule Hangman.Impl.Game do
     }
   end
 
-  @spec make_move(Game.t, String.t) :: { Game.t, Type.tally }
+  @spec make_move(t, String.t) :: { t, Type.tally }
   def make_move(game = %{game_state: state}, _) when state in [:won, :lost ] do
     game
     |> to_game_tally_tuple
